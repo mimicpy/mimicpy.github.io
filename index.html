@@ -79,16 +79,6 @@
                   <span>Paper</span>
                 </a>
               </span>
-              <!-- Video Link. -->
-              <span class="link-block">
-                <a href="https://www.youtube.com/watch?v=MrKrnHhk8IA"
-                   class="external-link button is-normal is-rounded is-dark">
-                  <span class="icon">
-                      <i class="fab fa-youtube"></i>
-                  </span>
-                  <span>Video</span>
-                </a>
-              </span>
             </div>
 
           </div>
@@ -156,47 +146,88 @@
 <section class="section">
   <div class="columns is-centered has-text-centered">
     <div class="column is-six-fifths">
-      <h2 class="title is-3">Limitations of CXR-CLIP</h2>
+      <h2 class="title is-3">Background</h2>
     </div>
   </div>
 
   <div class="container is-max-desktop">
-
     <div class="columns is-centered">
-
-      <!-- Visual Effects. -->
-      <div class="column">
-        <div class="content">
-          <h2 class="title is-3">Modality Gap</h2>
+      <div class="column is-full-width">
+        <div class="content has-text-justified"> 
           <p>
-            Semantic and structural differences in the <i>CLIP encoders</i> create a geometric misalignment between
-            the embedding spaces of each modal. This separation weakens the performance of cross-modal tasks such as zero-shot
-            retrieval.
-          </p>
-          <figure style="text-align: center;">
-            <img id="teaser" width="100%" src="static/images/gap.png">  
-          </figure>
-        </div>
-      </div>
-      <!--/ Visual Effects. -->
+            Vision-language models for CXR are a current focal point of research in medical imaging.
+            By combining visual data from medical scans with textual data from radiology
+            reports, these models offer the potential to improve diagnostic accuracy and enable
+            more effective data retrieval.
 
-      <div class="column">
-        <div class="content">
-          <h2 class="title is-3">Augmentation Hallucination</h2>
-          <p>
-            CXR-CLIP employs backtranslation to augment its textual corpus. 
-              In the case of radiology reports, backtranslation often leads to the
-              distortion or even corruption of critical clinical information, which can severely affect
-              the integrity of the dataset.
+            CXR-CLIP is a pretraining framework built upon the original
+            CLIP implementation, designed to enhance its zero-shot capabilities on infrequent concept
+            domains, such as Chest X-Ray classification.
+
           </p>
-          <figure style="text-align: center;">
-            <img id="teaser" width="100%" src="static/images/backtranslation-probs.png">  
-          </figure>
+          <p>
+            Instead of the traditional one image - one text pair method from CLIP, CXR-CLIP proses using
+            two images and two texts per study, which are obtained by applying multiple views from a CXR
+            study and by decomposing its reports in subsections.
+
+            <figure style="text-align: center;">
+              <img id="teaser" width="100%" src="static/images/cxrclipbatch.png">  
+            </figure>
+
+            When a multiview study is not possible, CXR-CLIP applies default image transformations to augment
+            a single image into a corresponding pair. It also tries to follow the same logic by augmenting
+            its report when multiple sections are not available, but by using backtranslation via 
+            <a href="https://huggingface.co/Helsinki-NLP/opus-mt-en-it">Opus-MT</a>.
+
+            <figure style="text-align: center;">
+              <img id="teaser" width="75%" src="static/images/backtranslation.png">  
+            </figure>
+
+            Finally, it expands on the usual CLIP loss (computed for each pair of image and text) by adding two terms: 
+            an inter-text (between the two texts) loss term and an inter-image (between the two images) loss term. 
+
+            <figure style="text-align: center;">
+              <img id="teaser" width="100%" src="static/images/cxrcliplosses.png">  
+            </figure>
+          </p>
+        </div>  
+        <h2 class="title is-4">Limitations</h2>   
+        <div class="content has-text-justified">
+          <p>
+            Extensive exploration of the CXR-CLIP model led to the identification of two major problems.
+            <ul type="1">
+              <li>
+                <b>Modality Gap</b>: 
+                <span style="font-size: 95%;">
+                  Semantic and structural differences in the <i>CLIP encoders</i> create a geometric misalignment between
+                  the embedding spaces of each modal. This separation weakens the performance of cross-modal tasks such as zero-shot
+                  retrieval.
+                </span>
+
+                <figure style="text-align: center;">
+                  <img id="teaser" width="75%" src="static/images/gap.png">  
+                </figure>
+              </li>
+
+              <li>
+                <b>Backtranslation Hallucinates</b>: 
+                <span style="font-size: 95%;">
+                  In the case of radiology reports, backtranslation often leads to the
+                  distortion or even corruption of critical clinical information, which can severely affect
+                  the integrity of the dataset.
+                </span>
+
+                <figure style="text-align: center;">
+                  <img id="teaser" width="75%" src="static/images/backtranslation-probs.png">  
+                </figure>
+              </li>
+            </ul>  
+          </p>
         </div>
       </div>
     </div>
-
   </div>
+
 </section>
 
 <section class="section">
@@ -558,48 +589,6 @@
             Particularly, no sample from the evaluation dataset is used, since the performance of zero-shot classification is desired.       
           </p>
           </div>
-          <h2 class="title is-4">Zero-Shot Multilabel Classification</h2>
-          <div class="content has-text-justified">
-            <p>
-              It is possible to use the embeddings directly to craft a binary classifier (is a class present or not). To do so,
-              the embedding of an image is compared to class-specific positive and negative prompts, e.g. for pneumonia 
-              <span class="is-family-monospace">[No evidence of pneumonia, Findings suggesting pneumonia]</span>. The prompt
-              with most similarity will then define the result of classification. Therefore, classification metrics might be used in
-              particular, AUROC is presented.          
-            </p>
-            <table class="table is-fullwidth is-hoverable" style="text-align: center">
-              <thead style="border-collapse: collapse;">
-                <tr>
-                  <th style="text-align: left">Model Variant</th>
-                  <th>VinDr-CXR</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <th style="text-align: left">Baseline</th>
-                  <td></td> 
-                </tr>
-                <tr>
-                  <th style="text-align: left">LoRA-V</th>
-                  <td></td> 
-                </tr>
-                <tr>
-                  <th style="text-align: left">LoRA-T</th> 
-                  <td></td> 
-                </tr>
-                <tr>
-                  <th style="text-align: left">LoRA-TV</th>
-                  <td></td> 
-                </tr>
-              </tbody>
-            </table>
-            <p>
-              <i>
-              Note: It was not possible to access and download CheXpert5x200 for evaluation, as used in the original paper.
-              Therefore, it was left out of the final thesis. 
-              </i>         
-            </p>
-          </div>
         </div> 
       </div>
     </div>
@@ -615,38 +604,14 @@
 
       <div class="content has-text-justified">
         <p>
-          There's a lot of excellent work that was introduced around the same time as ours.
-        </p>
-        <p>
-          <a href="https://arxiv.org/abs/2104.09125">Progressive Encoding for Neural Optimization</a> introduces an idea similar to our windowed position encoding for coarse-to-fine optimization.
-        </p>
-        <p>
-          <a href="https://www.albertpumarola.com/research/D-NeRF/index.html">D-NeRF</a> and <a href="https://gvv.mpi-inf.mpg.de/projects/nonrigid_nerf/">NR-NeRF</a>
-          both use deformation fields to model non-rigid scenes.
-        </p>
-        <p>
-          Some works model videos with a NeRF by directly modulating the density, such as <a href="https://video-nerf.github.io/">Video-NeRF</a>, <a href="https://www.cs.cornell.edu/~zl548/NSFF/">NSFF</a>, and <a href="https://neural-3d-video.github.io/">DyNeRF</a>
-        </p>
-        <p>
-          There are probably many more by the time you are reading this. Check out <a href="https://dellaert.github.io/NeRF/">Frank Dellart's survey on recent NeRF papers</a>, and <a href="https://github.com/yenchenlin/awesome-NeRF">Yen-Chen Lin's curated list of NeRF papers</a>.
+          Our work was developed after the methods from <a href="https://arxiv.org/abs/2310.13292">CXR-CLIP</a>. 
+          We acknowledge their contribution in keeping their project open source.
         </p>
       </div>
     </div>
   </div>
   <!--/ Concurrent Work. -->
 </div>
-</section>
-
-<section class="section" id="BibTeX">
-  <div class="container is-max-desktop content">
-    <h2 class="title">BibTeX</h2>
-    <pre><code>@article{park2021nerfies,
-  author    = {Park, Keunhong and Sinha, Utkarsh and Barron, Jonathan T. and Bouaziz, Sofien and Goldman, Dan B and Seitz, Steven M. and Martin-Brualla, Ricardo},
-  title     = {Nerfies: Deformable Neural Radiance Fields},
-  journal   = {ICCV},
-  year      = {2021},
-}</code></pre>
-  </div>
 </section>
 
 
